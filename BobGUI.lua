@@ -22,8 +22,8 @@ local DamageBob = false
 local AutoTycoon = false
 local EverythingActive = false
 local AttackBobMinions = false
+local HitMeteors = false
 local Invincibility = false
-local InvincibilityDebounce = false
 local InvincibilityPosition = Vector3.new(0,100,0)
 
 HomeTab:CreateToggle({
@@ -71,6 +71,15 @@ HomeTab:CreateToggle({
 		if not AttackBobMinions then
 			player.Character.HumanoidRootPart.Position = (InvincibilityPosition)
 		end
+	end
+})
+
+HomeTab:CreateToggle({
+	Name = "Hit Meteors",
+	CurrentValue = false,
+	Callback = function(Value)
+		Invincibility = Value
+		print("Hit Meteors:", Value)
 	end
 })
 
