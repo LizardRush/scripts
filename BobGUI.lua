@@ -12,6 +12,13 @@ local Window = Rayfield:CreateWindow({
 	}
 })
 
+function NotImplemented()
+	Rayfield:Notify({
+		Title = "LRTools",
+		Content = "This is currently not implemented, do not expect it to do anything",
+		Duration = 5
+	})
+end
 function LoadScript(Url)
 	loadstring(game:HttpGet(Url))()
 end
@@ -54,7 +61,7 @@ HomeTab:CreateToggle({
 })
 
 HomeTab:CreateToggle({
-	Name = "Kill Bob Minions",
+	Name = "Kill Bob Minions (Requires Invincibility)",
 	CurrentValue = false,
 	Callback = function(Value)
 		AttackBobMinions = Value
@@ -75,11 +82,12 @@ HomeTab:CreateToggle({
 })
 
 HomeTab:CreateToggle({
-	Name = "Hit Meteors",
+	Name = "Hit Meteors (Requires Invincibility)",
 	CurrentValue = false,
 	Callback = function(Value)
-		Invincibility = Value
+		HitMeteors = Value
 		print("Hit Meteors:", Value)
+		NotImplemented()
 	end
 })
 
@@ -130,9 +138,9 @@ game["Run Service"].Heartbeat:Connect(function()
 		ReturnButton.Visible = false
 	end
 end)
-
+task.spawn(function()
 while true do
-	if AttackBobMinions and EverythingActive then
+	if AttackBobMinions and EverythingActive and Invincibility then
 		for _, obj in ipairs(workspace:GetDescendants()) do
 			if obj.Name == "BobMinion" then
 				local character = player.Character
@@ -155,12 +163,11 @@ while true do
 						task.wait(0.25)
 						player.Character.HumanoidRootPart.Position = (InvincibilityPosition)
 						task.wait(0.25)
-					else
-						task.wait(0.5)
 					end
 				end
 			end
 		end
 	end
 	task.wait()
-end
+	end
+end)
