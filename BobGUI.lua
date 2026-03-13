@@ -12,6 +12,10 @@ local Window = Rayfield:CreateWindow({
 	}
 })
 
+function LoadScript(Url)
+	loadstring(game:HttpGet(Url))()
+end
+
 local HomeTab = Window:CreateTab("Home", 4483362458)
 
 local DamageBob = false
@@ -50,8 +54,19 @@ HomeTab:CreateToggle({
 	Name = "Kill Bob Minions",
 	CurrentValue = false,
 	Callback = function(Value)
-		AutoTycoon = Value
+		AttackBobMinions = Value
 		print("Kill Bob Minions:", Value)
+	end
+})
+
+local FlyButton
+FlyButton = HomeTab:CreateButton({
+	Name = "Load Fly Script",
+	Callback = function()
+		if FlyButton then
+			LoadScript("https://raw.githubusercontent.com/XNEOFF/FlyGuiV3/main/FlyGuiV3.txt")
+			FlyButton:Destroy()
+		end
 	end
 })
 
