@@ -22,6 +22,9 @@ local DamageBob = false
 local AutoTycoon = false
 local EverythingActive = false
 local AttackBobMinions = false
+local Invincibility = false
+local InvincibilityDebounce = false
+local InvincibilityPosition = Vector3.new(0,100,0)
 
 HomeTab:CreateToggle({
 	Name = "Everything Active",
@@ -59,6 +62,18 @@ HomeTab:CreateToggle({
 	end
 })
 
+HomeTab:CreateToggle({
+	Name = "Invincibility",
+	CurrentValue = false,
+	Callback = function(Value)
+		Invincibility = Value
+		print("Invincibility:", Value)
+		if not AttackBobMinions then
+			player.Character.HumanoidRootPart.Position = (InvincibilityPosition)
+		end
+	end
+})
+
 local FlyButton
 FlyButton = HomeTab:CreateButton({
 	Name = "Load Fly Script",
@@ -66,6 +81,16 @@ FlyButton = HomeTab:CreateButton({
 		if FlyButton then
 			LoadScript("https://raw.githubusercontent.com/XNEOFF/FlyGuiV3/main/FlyGuiV3.txt")
 			FlyButton:Destroy()
+		end
+	end
+})
+
+local ReturnButton
+ReturnButton = HomeTab:CreateButton({
+	Name = "Return To Invincibility Spot",
+	Callback = function()
+		if Invincibility then
+			player.Character.HumanoidRootPart.Position = (InvincibilityPosition)
 		end
 	end
 })
@@ -88,6 +113,13 @@ game["Run Service"].Heartbeat:Connect(function()
 		local Event = findTycoon().Click.ClickDetector
 		fireclickdetector(Event)
 	end
+	if Invincibility then
+		player.Character.HumanoidRootPart.Anchored = true
+		ReturnButton.Visible = true
+	else
+		player.Character.HumanoidRootPart.Anchored = false
+		ReturnButton.Visible = false
+	end
 end)
 
 while true do
@@ -101,7 +133,7 @@ while true do
 					if obj:IsA("BasePart") then
 						root.CFrame = obj.CFrame + Vector3.new(0, 3, 0)
 					elseif obj:IsA("Model") and obj:FindFirstChild("HumanoidRootPart") then
-						root.CFrame = obj.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
+						root.CFrame = obj.HumanoidRootPart.CFrame
 					end
 
 					local tool = character:FindFirstChildOfClass("Tool")
@@ -109,7 +141,14 @@ while true do
 						tool:Activate()
 					end
 
-					task.wait(0.5)
+					
+					if Invincibility then
+						task.wait(0.25)
+						player.Character.HumanoidRootPart.Position = (InvincibilityPosition)
+						task.wait(0.25)
+					else
+						task.wait(0.5)
+					end
 				end
 			end
 		end
