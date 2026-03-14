@@ -23,6 +23,10 @@ function LoadScript(Url)
 	loadstring(game:HttpGet(Url))()
 end
 
+function returnToInvinvincible()
+	player.Character:PivotTo(CFrame.new(InvincibilityPosition))
+end
+
 local HomeTab = Window:CreateTab("Home")
 local FightTab = Window:CreateTab("Bob")
 local TycoonTab = Window:CreateTab("Tycoon")
@@ -80,7 +84,7 @@ PlayerTab:CreateToggle({
 		Invincibility = Value
 		print("Invincibility:", Value)
 		if not AttackBobMinions then
-			player.Character.HumanoidRootPart.Position = (InvincibilityPosition)
+			returnToInvinvincible()
 		end
 	end
 })
@@ -96,7 +100,7 @@ FightTab:CreateToggle({
 })
 
 local FlyButton
-MiscTab = HomeTab:CreateButton({
+FlyButton = MiscTab:CreateButton({
 	Name = "Load Fly Script",
 	Callback = function()
 		if FlyButton then
@@ -106,19 +110,15 @@ MiscTab = HomeTab:CreateButton({
 	end
 })
 
-local ReturnButton
-MiscTab = HomeTab:CreateButton({
+MiscTab:CreateButton({
 	Name = "Return To Invincibility Spot",
 	Callback = function()
 		if Invincibility then
-			player.Character.HumanoidRootPart.Position = (InvincibilityPosition)
+			returnToInvinvincible()
 		end
 	end
 })
 
-local function findTycoon()
-	return workspace["ÅTycoon".. player.Name]
-end
 
 game["Run Service"].Heartbeat:Connect(function()
 	if not EverythingActive then return end
@@ -127,30 +127,28 @@ game["Run Service"].Heartbeat:Connect(function()
 		Event:FireServer()
 	end
 	if AutoTycoon then
-		local Event = findTycoon().Click.ClickDetector
+		local Event = game.workspace["ÅTycoon".. player.Name].Click.ClickDetector
 		fireclickdetector(Event)
 	end
 	if Invincibility then
 		player.Character.HumanoidRootPart.Anchored = true
-		ReturnButton.Visible = true
 	else
 		player.Character.HumanoidRootPart.Anchored = false
-		ReturnButton.Visible = false
 	end
 end)
 task.spawn(function()
 while true do
 	if AttackBobMinions and EverythingActive and Invincibility then
-		for _, obj in ipairs(workspace:GetDescendants()) do
+		for _, obj in ipairs(game.workspace:GetDescendants()) do
 			if obj.Name == "BobMinion" then
 				local character = player.Character
 				if character and character:FindFirstChild("HumanoidRootPart") then
-					local root = character.HumanoidRootPart
+					local root = character
 
 					if obj:IsA("BasePart") then
 						root.CFrame = obj.CFrame + Vector3.new(0, 3, 0)
 					elseif obj:IsA("Model") and obj:FindFirstChild("HumanoidRootPart") then
-						root.CFrame = obj.HumanoidRootPart.CFrame
+						root:PivotTo(obj.HumanoidRootPart.CFrame)
 					end
 
 					local tool = character:FindFirstChildOfClass("Tool")
@@ -161,7 +159,7 @@ while true do
 					
 					if Invincibility then
 						task.wait(0.25)
-						player.Character.HumanoidRootPart.Position = (InvincibilityPosition)
+						player.Character:PivotTo(InvincibilityPosition)
 						task.wait(0.25)
 					end
 				end
