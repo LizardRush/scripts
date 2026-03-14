@@ -1,6 +1,6 @@
 local placeId = game.PlaceId
 local url = "https://raw.githubusercontent.com/LizardRush/scripts/refs/heads/main/" .. placeId
-local Fallbackurl = "https://raw.githubusercontent.com/LizardRush/scripts/refs/heads/main/Fallback.lue"
+local Fallbackurl = "https://raw.githubusercontent.com/LizardRush/scripts/refs/heads/main/Fallback.lua"
 
 
 local success, response = pcall(function()
