@@ -23,7 +23,11 @@ function LoadScript(Url)
 	loadstring(game:HttpGet(Url))()
 end
 
-local HomeTab = Window:CreateTab("Home", 4483362458)
+local HomeTab = Window:CreateTab("Home")
+local FightTab = Window:CreateTab("Bob")
+local TycoonTab = Window:CreateTab("Tycoon")
+local PlayerTab = Window:CreateTab("Player")
+local MiscTab = Window:CreateTab("Misc")
 
 local DamageBob = false
 local AutoTycoon = false
@@ -42,7 +46,7 @@ HomeTab:CreateToggle({
 	end
 })
 
-HomeTab:CreateToggle({
+FightTab:CreateToggle({
 	Name = "Damage Bob",
 	CurrentValue = false,
 	Callback = function(Value)
@@ -51,7 +55,7 @@ HomeTab:CreateToggle({
 	end
 })
 
-HomeTab:CreateToggle({
+TycoonTab:CreateToggle({
 	Name = "Auto Tycoon",
 	CurrentValue = false,
 	Callback = function(Value)
@@ -60,7 +64,7 @@ HomeTab:CreateToggle({
 	end
 })
 
-HomeTab:CreateToggle({
+FightTab:CreateToggle({
 	Name = "Kill Bob Minions (Requires Invincibility)",
 	CurrentValue = false,
 	Callback = function(Value)
@@ -69,7 +73,7 @@ HomeTab:CreateToggle({
 	end
 })
 
-HomeTab:CreateToggle({
+PlayerTab:CreateToggle({
 	Name = "Invincibility",
 	CurrentValue = false,
 	Callback = function(Value)
@@ -81,7 +85,7 @@ HomeTab:CreateToggle({
 	end
 })
 
-HomeTab:CreateToggle({
+FightTab:CreateToggle({
 	Name = "Hit Meteors (Requires Invincibility)",
 	CurrentValue = false,
 	Callback = function(Value)
@@ -92,7 +96,7 @@ HomeTab:CreateToggle({
 })
 
 local FlyButton
-FlyButton = HomeTab:CreateButton({
+MiscTab = HomeTab:CreateButton({
 	Name = "Load Fly Script",
 	Callback = function()
 		if FlyButton then
@@ -103,7 +107,7 @@ FlyButton = HomeTab:CreateButton({
 })
 
 local ReturnButton
-ReturnButton = HomeTab:CreateButton({
+MiscTab = HomeTab:CreateButton({
 	Name = "Return To Invincibility Spot",
 	Callback = function()
 		if Invincibility then
