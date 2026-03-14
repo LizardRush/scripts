@@ -84,9 +84,6 @@ PlayerTab:CreateToggle({
 	Callback = function(Value)
 		Invincibility = Value
 		print("Invincibility:", Value)
-		if not AttackBobMinions then
-			returnToInvinvincible()
-		end
 	end
 })
 
