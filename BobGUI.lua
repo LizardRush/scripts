@@ -113,11 +113,7 @@ ReturnButton = HomeTab:CreateButton({
 })
 
 local function findTycoon()
-	for _, obj in ipairs(workspace:GetDescendants()) do
-		if obj.Name:sub(1,7) == "ÅTycoon" then
-			return obj
-		end
-	end
+	return workspace["ÅTycoon".. player.Name]
 end
 
 game["Run Service"].Heartbeat:Connect(function()
