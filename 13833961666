@@ -1,50 +1,31 @@
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
-
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
 local Window = Rayfield:CreateWindow({
 	Name = "LRush's Bob fighter",
-	LoadingTitle = "LRush hub",
-	LoadingSubtitle = game.PlaceId,
-	ConfigurationSaving = {
-		Enabled = false
-	}
+	LoadingTitle = "LRush's Bob fighter",
+	LoadingSubtitle = "by LRush",
+	ConfigurationSaving = { Enabled = false }
 })
-
-local assets = {
-	GUI = {
-		
-	}
-}
-
-function getAsset(assetId)
-	local success, objects = pcall(function()
-		return game:GetObjects("rbxassetid://" .. tostring(assetId))
-	end)
-
-	if success and objects[1] then
-		return objects[1]
-	else
-		warn("Failed to load asset:", assetId)
-		return nil
-	end
-end
 
 if not player.Character then
 	player.CharacterAdded:Wait()
 end
 
+-- Tabs
 local HomeTab = Window:CreateTab("Home")
 local FightTab = Window:CreateTab("Bob")
 local TycoonTab = Window:CreateTab("Tycoon")
 local PlayerTab = Window:CreateTab("Player")
 local ScriptedTab = Window:CreateTab("Scripted")
 
+-- Flags
 local DamageBob = false
 local AutoTycoon = false
 local EverythingActive = false
@@ -53,207 +34,93 @@ local HitMeteors = false
 
 local FlyEnabled = false
 local FlySpeed = 50
-
-local TeleportInsteadOfFly = false
+local HoverAboveMap = false
 
 local ScriptedFlyTarget = nil
 local ScriptedDirection = nil
 
-HomeTab:CreateToggle({
-	Name = "Everything Active",
-	CurrentValue = false,
-	Callback = function(v)
-		EverythingActive = v
-	end
-})
+-- Minion Y-level control
+local MinionMaxY = 100
+local ShowYPane = false
+local YPane
 
-FightTab:CreateToggle({
-	Name = "Damage Bob",
-	CurrentValue = false,
-	Callback = function(v)
-		DamageBob = v
-	end
-})
-
-FightTab:CreateToggle({
-	Name = "Kill Bob Minions",
-	CurrentValue = false,
-	Callback = function(v)
-		AttackBobMinions = v
-	end
-})
-
-FightTab:CreateToggle({
-	Name = "Hit Meteors",
-	CurrentValue = false,
-	Callback = function(v)
-		HitMeteors = v
-	end
-})
-
-TycoonTab:CreateToggle({
-	Name = "Auto Tycoon",
-	CurrentValue = false,
-	Callback = function(v)
-		AutoTycoon = v
-	end
-})
-
-PlayerTab:CreateToggle({
-	Name = "Fly",
-	CurrentValue = false,
-	Callback = function(v)
-		FlyEnabled = v
-	end
-})
-
-PlayerTab:CreateInput({
-	Name = "Fly Speed",
-	PlaceholderText = "50",
-	RemoveTextAfterFocusLost = false,
-	Callback = function(v)
-		local n = tonumber(v)
-		if n then
-			FlySpeed = n
+-- UI
+HomeTab:CreateToggle({ Name="Everything Active", CurrentValue=false, Callback=function(v) EverythingActive=v end })
+FightTab:CreateToggle({ Name="Damage Bob", CurrentValue=false, Callback=function(v) DamageBob=v end })
+FightTab:CreateToggle({ Name="Kill Bob Minions", CurrentValue=false, Callback=function(v) AttackBobMinions=v end })
+FightTab:CreateToggle({ Name="Hit Meteors", CurrentValue=false, Callback=function(v) HitMeteors=v end })
+TycoonTab:CreateToggle({ Name="Auto Tycoon", CurrentValue=false, Callback=function(v) AutoTycoon=v end })
+PlayerTab:CreateToggle({ Name="Fly", CurrentValue=false, Callback=function(v) FlyEnabled=v end })
+PlayerTab:CreateInput({ Name="Fly Speed", PlaceholderText="50", RemoveTextAfterFocusLost=false, Callback=function(v) local n=tonumber(v) if n then FlySpeed=n end end })
+PlayerTab:CreateToggle({ Name="Hover above map", CurrentValue=false, Callback=function(v) HoverAboveMap=v end })
+ScriptedTab:CreateInput({ Name="Max Minion Y", PlaceholderText="0", RemoveTextAfterFocusLost=false, Callback=function(v) local n=tonumber(v) if n then MinionMaxY=n; if YPane then YPane.Position=Vector3.new(0,MinionMaxY,0) end end end })
+ScriptedTab:CreateToggle({ Name="Show Y Pane", CurrentValue=false, Callback=function(v) ShowYPane=v
+	if v then
+		if not YPane then
+			YPane=Instance.new("Part")
+			YPane.Anchored=true
+			YPane.CanCollide=false
+			YPane.Size=Vector3.new(2048,1,2048)
+			YPane.Transparency=0.5
+			YPane.Color=Color3.new(1,0,0)
+			YPane.Position=Vector3.new(0,MinionMaxY,0)
+			YPane.Parent=workspace
 		end
+		YPane.Transparency=0.5
+	else
+		if YPane then YPane:Destroy() YPane=nil end
 	end
-})
+end })
 
-ScriptedTab:CreateToggle({
-	Name = "Teleport instead of Fly",
-	CurrentValue = false,
-	Callback = function(v)
-		TeleportInsteadOfFly = v
-	end
-})
-
--- fly system
+-- Fly system
 local flyPart
 local weld
 local flying = false
 
 local function startFly()
 	if flying then return end
-
 	local char = player.Character
 	if not char then return end
-
 	local root = char:FindFirstChild("HumanoidRootPart")
 	if not root then return end
 
-	flyPart = Instance.new("Part")
-	flyPart.Size = Vector3.new(1,1,1)
-	flyPart.Anchored = true
-	flyPart.CanCollide = true
-	flyPart.Transparency = 1
-	flyPart.CFrame = root.CFrame
-	flyPart.Parent = workspace
+	if not flyPart then
+		flyPart = Instance.new("Part")
+		flyPart.Size = Vector3.new(1,1,1)
+		flyPart.Anchored=false
+		flyPart.CanCollide=false
+		flyPart.Transparency=1
+		flyPart.CFrame=root.CFrame
+		flyPart.Parent=workspace
+	end
 
-	weld = Instance.new("WeldConstraint")
-	weld.Part0 = flyPart
-	weld.Part1 = root
-	weld.Parent = flyPart
+	weld = Instance.new("Weld")
+	weld.Part0=flyPart
+	weld.Part1=root
+	weld.C0=CFrame.new()
+	weld.Parent=flyPart
 
-	flying = true
+	flying=true
 end
 
 local function stopFly()
-	flying = false
+	flying=false
 	if weld then weld:Destroy() end
-	if flyPart then flyPart:Destroy() end
-	weld = nil
-	flyPart = nil
+	weld=nil
 end
 
 local function getNextMovement()
-
-	local v = Vector3.zero
-
-	if UserInputService:IsKeyDown(Enum.KeyCode.W) then
-		v += Vector3.new(0,0,-1)
-	end
-	if UserInputService:IsKeyDown(Enum.KeyCode.S) then
-		v += Vector3.new(0,0,1)
-	end
-	if UserInputService:IsKeyDown(Enum.KeyCode.A) then
-		v += Vector3.new(-1,0,0)
-	end
-	if UserInputService:IsKeyDown(Enum.KeyCode.D) then
-		v += Vector3.new(1,0,0)
-	end
-	if UserInputService:IsKeyDown(Enum.KeyCode.Q) then
-		v += Vector3.new(0,1,0)
-	end
-	if UserInputService:IsKeyDown(Enum.KeyCode.E) then
-		v += Vector3.new(0,-1,0)
-	end
-
-	return CFrame.new(v * FlySpeed)
-
+	local v=Vector3.zero
+	if UserInputService:IsKeyDown(Enum.KeyCode.W) then v+=Vector3.new(0,0,-1) end
+	if UserInputService:IsKeyDown(Enum.KeyCode.S) then v+=Vector3.new(0,0,1) end
+	if UserInputService:IsKeyDown(Enum.KeyCode.A) then v+=Vector3.new(-1,0,0) end
+	if UserInputService:IsKeyDown(Enum.KeyCode.D) then v+=Vector3.new(1,0,0) end
+	if UserInputService:IsKeyDown(Enum.KeyCode.Q) then v+=Vector3.new(0,1,0) end
+	if UserInputService:IsKeyDown(Enum.KeyCode.E) then v+=Vector3.new(0,-1,0) end
+	return v
 end
 
--- trackers
-local Minions = {}
-local Meteors = {}
-
-local function getFirstPart(model)
-	for _,v in ipairs(model:GetDescendants()) do
-		if v:IsA("BasePart") then
-			return v
-		end
-	end
-end
-
-local function trackMinion(obj)
-	if obj.Name ~= "BobMinion" then return end
-	table.insert(Minions,obj)
-end
-
-local function trackMeteor(model)
-
-	if model.Name ~= "SpiritRock" then return end
-
-	local part = getFirstPart(model)
-	if not part then return end
-
-	local lastPos = part.Position
-	local stillTimer = 0
-
-	RunService.Heartbeat:Connect(function(dt)
-
-		if not part.Parent then
-			Meteors[model] = nil
-			return
-		end
-
-		if (part.Position - lastPos).Magnitude < 0.05 then
-			stillTimer += dt
-		else
-			stillTimer = 0
-		end
-
-		lastPos = part.Position
-
-		if stillTimer >= 1 then
-			Meteors[model] = part
-		end
-
-	end)
-
-end
-
-for _,v in ipairs(workspace:GetDescendants()) do
-	trackMinion(v)
-	trackMeteor(v)
-end
-
-workspace.DescendantAdded:Connect(function(obj)
-	trackMinion(obj)
-	trackMeteor(obj)
-end)
-
--- automation loops
-
+-- Automation loops
 task.spawn(function()
 	while true do
 		if EverythingActive and DamageBob then
@@ -266,147 +133,150 @@ end)
 task.spawn(function()
 	while true do
 		if EverythingActive and AutoTycoon then
-			fireclickdetector(workspace["ÅTycoon"..player.Name].Click.ClickDetector)
+			for _, obj in ipairs(workspace:GetDescendants()) do
+				if obj:IsA("ClickDetector") then
+					task.spawn(function()
+						pcall(function()
+							fireclickdetector(obj)
+						end)
+					end)
+				end
+			end
 		end
-		task.wait()
+		task.wait(0.01)
+	end
+end))
+
+-- Helper to get first BasePart of a model
+local function getFirstPart(model)
+	for _,v in ipairs(model:GetDescendants()) do
+		if v:IsA("BasePart") then
+			return v
+		end
+	end
+end
+
+-- Track meteors
+local Meteors = {}
+for _,v in ipairs(workspace:GetDescendants()) do
+	if v.Name=="SpiritRock" then
+		local part=getFirstPart(v)
+		if part then Meteors[v]=part end
+	end
+end
+workspace.DescendantAdded:Connect(function(obj)
+	if obj.Name=="SpiritRock" then
+		local part=getFirstPart(obj)
+		if part then Meteors[obj]=part end
 	end
 end)
 
--- AI controller
-
+-- Scripted fly / minion targeting
+local CurrentMinionTarget = nil
 task.spawn(function()
-
 	while true do
-
 		if not EverythingActive then
-			task.wait(.2)
+			CurrentMinionTarget = nil
+			ScriptedFlyTarget = nil
+			task.wait(0.2)
 			continue
 		end
-
 		local char = player.Character
 		local root = char and char:FindFirstChild("HumanoidRootPart")
-
 		if not root then
-			task.wait(.2)
+			task.wait(0.2)
 			continue
 		end
 
-		local targetPart = nil
+		-- Lock onto a single minion until gone/out-of-bounds
+		if AttackBobMinions then
+			if CurrentMinionTarget and CurrentMinionTarget.Parent and CurrentMinionTarget.Position.Y<=MinionMaxY then
+				ScriptedFlyTarget=CurrentMinionTarget.Position
+				ScriptedDirection=workspace.bobBoss.HumanoidRootPart.Position
+				task.wait(0.05)
+				continue
+			else
+				CurrentMinionTarget=nil
+			end
+		end
 
+		if AttackBobMinions then
+			for _,obj in ipairs(workspace:GetDescendants()) do
+				if obj.Name=="BobMinion" then
+					local part=obj:IsA("Model") and obj:FindFirstChild("HumanoidRootPart") or obj
+					if part and part.Parent and part.Position.Y<=MinionMaxY then
+						CurrentMinionTarget=part
+						break
+					end
+				end
+			end
+		end
+
+		-- Meteors
+		local closestDist=math.huge
+		local meteorTarget=nil
 		if HitMeteors then
-
-			local dist = math.huge
-
 			for _,part in pairs(Meteors) do
 				if part and part.Parent then
-					local d = (root.Position - part.Position).Magnitude
-					if d < dist then
-						dist = d
-						targetPart = part
+					local d=(root.Position-part.Position).Magnitude
+					if d<closestDist then
+						closestDist=d
+						meteorTarget=part
 					end
 				end
 			end
-
 		end
 
-		if not targetPart and AttackBobMinions then
-
-			local dist = math.huge
-
-			for _,obj in ipairs(Minions) do
-				local part = obj:IsA("Model") and obj:FindFirstChild("HumanoidRootPart") or obj
-				if part and part.Parent then
-					local d = (root.Position - part.Position).Magnitude
-					if d < dist then
-						dist = d
-						targetPart = part
-					end
-				end
-			end
-
+		if meteorTarget then
+			ScriptedFlyTarget=meteorTarget.Position
+			ScriptedDirection=workspace.bobBoss.HumanoidRootPart.Position
+		elseif CurrentMinionTarget then
+			ScriptedFlyTarget=CurrentMinionTarget.Position
+			ScriptedDirection=workspace.bobBoss.HumanoidRootPart.Position
+		else
+			ScriptedFlyTarget=nil
+			ScriptedDirection=nil
 		end
 
-		if targetPart then
-
-			while targetPart.Parent and EverythingActive do
-
-				if TeleportInsteadOfFly then
-					root.CFrame = CFrame.new(targetPart.Position + Vector3.new(0,3,0))
-				else
-					ScriptedFlyTarget = targetPart.Position
-				end
-
-				if (root.Position - targetPart.Position).Magnitude <= 6 then
-					break
-				end
-
-				RunService.Heartbeat:Wait()
-
-			end
-
-			local tool = char:FindFirstChildOfClass("Tool")
-
-			if tool then
-				tool:Activate()
-			end
-
-		end
-
-		ScriptedFlyTarget = nil
-		ScriptedDirection = nil
-
-		task.wait(.05)
-
+		task.wait(0.05)
 	end
-
 end)
 
--- fly logic
-
+-- Fly logic
 RunService.RenderStepped:Connect(function()
-
-	local char = player.Character
+	local char=player.Character
 	if not char then return end
-
-	local root = char:FindFirstChild("HumanoidRootPart")
+	local root=char:FindFirstChild("HumanoidRootPart")
 	if not root then return end
 
-	if ScriptedFlyTarget and not TeleportInsteadOfFly then
+	startFly()
 
-		startFly()
+	local targetPos=nil
+	local facePos=nil
 
-		local dir = ScriptedFlyTarget-root.Position
-		local dist = dir.Magnitude
-
-		if dist <= 0.1 then
-			ScriptedFlyTarget = nil
+	if ScriptedFlyTarget then
+		targetPos=ScriptedFlyTarget
+		facePos=ScriptedDirection or ScriptedFlyTarget
+	elseif FlyEnabled then
+		local moveDir=getNextMovement()
+		if moveDir.Magnitude>0 then
+			targetPos=flyPart.Position+moveDir.Unit*FlySpeed
+		elseif HoverAboveMap then
+			targetPos=Vector3.new(0,50,0)
+		else
+			flyPart.Velocity=Vector3.zero
 			return
 		end
+	end
 
-		if ScriptedDirection then
-			root.CFrame = CFrame.lookAt(root.Position,ScriptedDirection)
-		else
-			root.CFrame = CFrame.lookAt(root.Position,ScriptedFlyTarget)
+	if targetPos then
+		local dir=targetPos-root.Position
+		local dist=dir.Magnitude
+		if dist>0.1 then
+			if facePos then
+				root.CFrame=CFrame.lookAt(root.Position,facePos)
+			end
+			flyPart.CFrame=CFrame.new(root.Position+dir.Unit*FlySpeed)
 		end
-
-		flyPart.CFrame = CFrame.new(root.Position + dir.Unit*FlySpeed,ScriptedFlyTarget)
-
-		return
-
 	end
-
-	if FlyEnabled then
-
-		startFly()
-
-		local look = (Camera.Focus.Position-Camera.CFrame.Position).Unit
-		local pos = flyPart.Position
-		local nextMove = getNextMovement()
-
-		flyPart.CFrame = CFrame.new(pos,pos+look)*nextMove
-
-	else
-		stopFly()
-	end
-
 end)
