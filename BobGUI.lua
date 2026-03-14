@@ -39,6 +39,7 @@ local EverythingActive = false
 local AttackBobMinions = false
 local HitMeteors = false
 local Invincibility = false
+local TempNoInvincibility = false
 local InvincibilityPosition = Vector3.new(0,100,0)
 
 HomeTab:CreateToggle({
@@ -130,10 +131,8 @@ game["Run Service"].Heartbeat:Connect(function()
 		local Event = game.workspace["ÅTycoon".. player.Name].Click.ClickDetector
 		fireclickdetector(Event)
 	end
-	if Invincibility then
-		player.Character.HumanoidRootPart.Anchored = true
-	else
-		player.Character.HumanoidRootPart.Anchored = false
+	if Invincibility and not TempNoInvincibility then
+		returnToInvinvincible()
 	end
 end)
 task.spawn(function()
@@ -143,7 +142,8 @@ while true do
 			if obj.Name == "BobMinion" then
 				local character = player.Character
 				if character and character:FindFirstChild("HumanoidRootPart") then
-					local root = character
+						local root = character
+						TempNoInvincibility = true
 
 					if obj:IsA("BasePart") then
 						root.CFrame = obj.CFrame + Vector3.new(0, 3, 0)
@@ -159,7 +159,7 @@ while true do
 					
 					if Invincibility then
 						task.wait(0.25)
-						player.Character:PivotTo(InvincibilityPosition)
+						TempNoInvincibility = false
 						task.wait(0.25)
 					end
 				end
